@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,10 @@ class WakeupActivity : ComponentActivity() {
         val color2 = Color.Black
 
         setContent {
+
+            val size = DataStoreUtils(applicationContext).getScreenCornerRadiusSize()
+                .collectAsState(initial = 32)
+
             NotificationListenerTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -86,7 +91,12 @@ class WakeupActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AnimatedBorder(gradientColors = listOf(color1, color2), icon = icon)
+                        AnimatedBorder(
+                            shape = RoundedCornerShape(size = size.value.dp),
+                            gradientColors = listOf(color1, color2, color1, color2),
+                            icon = icon,
+                            content = {}
+                        )
                     }
                     Handler(Looper.getMainLooper()).postDelayed({ finish() }, 5000)
                 }
@@ -101,9 +111,10 @@ class WakeupActivity : ComponentActivity() {
 
 @Composable
 fun AnimatedBorder(
-    icon: Drawable,
+    icon: Drawable?,
     gradientColors: List<Color>,
-    shape: Shape = RoundedCornerShape(size = 32.dp),
+    shape: Shape,
+    content: @Composable() () -> Unit
 ) {
     val infiniteTransaction = rememberInfiniteTransition(label = "infinite color transaction")
 
@@ -144,7 +155,7 @@ fun AnimatedBorder(
                         },
                     color = Color.Black,
                     shape = shape,
-                    content = {}
+                    content = { content() }
                 )
             }
         )
