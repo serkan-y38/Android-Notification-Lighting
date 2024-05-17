@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -64,13 +65,39 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-
             val context = LocalContext.current
             val dataStoreUtils = DataStoreUtils(context)
             val coroutineScope = rememberCoroutineScope()
-            val size = DataStoreUtils(applicationContext).getScreenCornerRadiusSize()
-                .collectAsState(initial = 32)
-            var sliderPosition by remember { mutableFloatStateOf(size.value.toFloat()) }
+
+            val cornerRadiusSize = DataStoreUtils(
+                applicationContext
+            ).getScreenCornerRadiusSize().collectAsState(initial = 32)
+
+            val cornerBorderSize = DataStoreUtils(
+                applicationContext
+            ).getBorderSize().collectAsState(initial = 4)
+
+            val animationFrequency = DataStoreUtils(
+                applicationContext
+            ).getAnimationFrequency().collectAsState(initial = 1)
+
+            var sliderPositionCornerRadiusSize by remember {
+                mutableFloatStateOf(cornerRadiusSize.value.toFloat())
+            }
+
+            var sliderPositionCornerBorderSize by remember {
+                mutableFloatStateOf(cornerBorderSize.value.toFloat())
+            }
+
+            var sliderPositionAnimationFrequency by remember {
+                mutableFloatStateOf(animationFrequency.value.toFloat())
+            }
+
+            val colorList: MutableList<Color> = mutableListOf()
+            for (i in 1..animationFrequency.value) {
+                colorList.add(MaterialTheme.colorScheme.primary)
+                colorList.add(Color.Black)
+            }
 
             NotificationListenerTheme {
                 // A surface container using the 'background' color from the theme
@@ -89,13 +116,9 @@ class MainActivity : ComponentActivity() {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             AnimatedBorder(
-                                shape = RoundedCornerShape(size = size.value.dp),
-                                gradientColors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    Color.Black,
-                                    MaterialTheme.colorScheme.primary,
-                                    Color.Black
-                                ),
+                                borderSize = cornerBorderSize.value.dp,
+                                shape = RoundedCornerShape(size = cornerRadiusSize.value.dp),
+                                gradientColors = colorList,
                                 icon = null,
                                 content = {
                                     Column(
@@ -120,6 +143,7 @@ class MainActivity : ComponentActivity() {
                                             text = "Please Allow 'Notification Access' and 'Display Over other apps'"
                                         )
                                         Button(
+                                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .wrapContentHeight(),
@@ -131,22 +155,13 @@ class MainActivity : ComponentActivity() {
                                                 Text(text = "Enable - Disable")
                                             }
                                         )
-                                        Text(
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .wrapContentHeight()
-                                                .padding(top = 40.dp),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            text = "Set screen corner radius size"
-                                        )
                                         Slider(
-                                            value = sliderPosition,
+                                            value = sliderPositionCornerRadiusSize,
                                             onValueChange = {
-                                                sliderPosition = it
+                                                sliderPositionCornerRadiusSize = it
                                                 coroutineScope.launch {
                                                     dataStoreUtils.setScreenCornerRadiusSize(
-                                                        sliderPosition.toInt()
+                                                        sliderPositionCornerRadiusSize.toInt()
                                                     )
                                                 }
                                             },
@@ -157,9 +172,53 @@ class MainActivity : ComponentActivity() {
                                             ),
                                             valueRange = 16f..64f
                                         )
-                                        Text(text = sliderPosition.toInt().toString())
-                                    }
+                                        Text(
+                                            text = sliderPositionCornerRadiusSize.toInt().toString()
+                                        )
 
+                                        Slider(
+                                            value = sliderPositionCornerBorderSize,
+                                            onValueChange = {
+                                                sliderPositionCornerBorderSize = it
+                                                coroutineScope.launch {
+                                                    dataStoreUtils.setBorderSize(
+                                                        sliderPositionCornerBorderSize.toInt()
+                                                    )
+                                                }
+                                            },
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = MaterialTheme.colorScheme.secondary,
+                                                activeTrackColor = MaterialTheme.colorScheme.secondary,
+                                                inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            ),
+                                            valueRange = 4f..16f
+                                        )
+                                        Text(
+                                            text = sliderPositionCornerBorderSize.toInt().toString()
+                                        )
+
+                                        Slider(
+                                            value = sliderPositionAnimationFrequency,
+                                            onValueChange = {
+                                                sliderPositionAnimationFrequency = it
+                                                coroutineScope.launch {
+                                                    dataStoreUtils.setAnimationFrequency(
+                                                        sliderPositionAnimationFrequency.toInt()
+                                                    )
+                                                }
+                                            },
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = MaterialTheme.colorScheme.secondary,
+                                                activeTrackColor = MaterialTheme.colorScheme.secondary,
+                                                inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            ),
+                                            valueRange = 1f..64f
+                                        )
+                                        Text(
+                                            text = sliderPositionAnimationFrequency.toInt()
+                                                .toString()
+                                        )
+                                    }
                                 }
                             )
                         }

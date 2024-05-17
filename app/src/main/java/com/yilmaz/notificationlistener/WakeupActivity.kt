@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.WindowCompat
@@ -74,9 +75,23 @@ class WakeupActivity : ComponentActivity() {
         val color2 = Color.Black
 
         setContent {
+            val cornerRadiusSize = DataStoreUtils(
+                applicationContext
+            ).getScreenCornerRadiusSize().collectAsState(initial = 32)
 
-            val size = DataStoreUtils(applicationContext).getScreenCornerRadiusSize()
-                .collectAsState(initial = 32)
+            val borderSize = DataStoreUtils(
+                applicationContext
+            ).getBorderSize().collectAsState(initial = 4)
+
+            val animationFrequency = DataStoreUtils(
+                applicationContext
+            ).getAnimationFrequency().collectAsState(initial = 1)
+
+            val colorList = mutableListOf<Color>()
+            for (i in 1..animationFrequency.value) {
+                colorList.add(color1)
+                colorList.add(color2)
+            }
 
             NotificationListenerTheme {
                 // A surface container using the 'background' color from the theme
@@ -92,10 +107,11 @@ class WakeupActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AnimatedBorder(
-                            shape = RoundedCornerShape(size = size.value.dp),
-                            gradientColors = listOf(color1, color2, color1, color2),
+                            shape = RoundedCornerShape(size = cornerRadiusSize.value.dp),
+                            gradientColors = colorList,
                             icon = icon,
-                            content = {}
+                            content = {},
+                            borderSize = borderSize.value.dp
                         )
                     }
                     Handler(Looper.getMainLooper()).postDelayed({ finish() }, 5000)
@@ -114,7 +130,8 @@ fun AnimatedBorder(
     icon: Drawable?,
     gradientColors: List<Color>,
     shape: Shape,
-    content: @Composable() () -> Unit
+    content: @Composable() () -> Unit,
+    borderSize: Dp
 ) {
     val infiniteTransaction = rememberInfiniteTransition(label = "infinite color transaction")
 
@@ -142,7 +159,7 @@ fun AnimatedBorder(
                 Surface(
                     Modifier
                         .fillMaxSize()
-                        .padding(4.dp)
+                        .padding(borderSize)
                         .drawWithContent {
                             rotate(degrees = degrees) {
                                 drawCircle(
